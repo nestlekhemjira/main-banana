@@ -1,0 +1,382 @@
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+
+import { toast } from "sonner";
+import { ArrowLeft, Loader2 } from "lucide-react";
+
+/* ---------- Types ---------- */
+
+interface FarmProfile {
+  farm_name: string;
+  farm_location: string;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  description: string | null;
+  product_type: "fruit" | "shoot";
+  price_per_unit: number;
+  available_quantity: number;
+  unit: string;
+  harvest_date: string;
+  image_url: string | null;
+  farm: FarmProfile | null;
+}
+
+/* ---------- Component ---------- */
+
+const ProductDetail = () => {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+
+  const [loading, setLoading] = useState(true);
+  const [product, setProduct] = useState<Product | null>(null);
+
+  const [openReserve, setOpenReserve] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+  const [note, setNote] = useState("");
+
+  const [addressType, setAddressType] = useState<"saved" | "new">("saved");
+  const [savedAddress, setSavedAddress] = useState<string | null>(null);
+  const [newAddress, setNewAddress] = useState("");
+
+  const [submitting, setSubmitting] = useState(false);
+
+  /* ---------- Load Product ---------- */
+
+  useEffect(() => {
+    if (!id) {
+      navigate("/market");
+      return;
+    }
+    loadProduct(id);
+  }, [id]);
+
+  const loadProduct = async (productId: string) => {
+    setLoading(true);
+
+    const { data, error } = await supabase
+      .from("products")
+      .select(`
+        id,
+        name,
+        description,
+        product_type,
+        price_per_unit,
+        available_quantity,
+        unit,
+        harvest_date,
+        image_url,
+        farm: farm_profiles (
+          farm_name,
+          farm_location
+        )
+      `)
+      .eq("id", productId)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (error || !data) {
+      toast.error("ไม่พบสินค้า");
+      navigate("/market");
+      return;
+    }
+
+    setProduct(data as Product);
+    setLoading(false);
+  };
+
+  /* ---------- Load User Address ---------- */
+
+  const loadUserAddress = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      toast.error("กรุณาเข้าสู่ระบบ");
+      return false;
+    }
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("address")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (error) {
+      toast.error("โหลดที่อยู่ไม่สำเร็จ");
+      return false;
+    }
+
+    if (data?.address) {
+      setSavedAddress(data.address);
+      setAddressType("saved");
+    } else {
+      setSavedAddress(null);
+      setAddressType("new");
+    }
+
+    return true;
+  };
+
+  /* ---------- Reserve ---------- */
+
+  const handleOpenReserve = async () => {
+    const ok = await loadUserAddress();
+    if (ok) setOpenReserve(true);
+  };
+
+  const handleReserve = async () => {
+    if (!product) return;
+
+    if (quantity > product.available_quantity) {
+      toast.error("จำนวนที่จองเกินกว่าสินค้าที่มี");
+      return;
+    }
+
+    let address = "";
+    if (addressType === "saved") {
+      if (!savedAddress) {
+        toast.error("ยังไม่มีที่อยู่");
+        return;
+      }
+      address = savedAddress;
+    } else {
+      if (!newAddress.trim()) {
+        toast.error("กรุณากรอกที่อยู่ใหม่");
+        return;
+      }
+      address = newAddress.trim();
+    }
+
+    setSubmitting(true);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      toast.error("กรุณาเข้าสู่ระบบ");
+      setSubmitting(false);
+      return;
+    }
+
+    const { error } = await supabase.rpc("reserve_product", {
+      p_product_id: product.id,
+      p_user_id: user.id,
+      p_quantity: quantity,
+      p_note: `${note || ""}\n\nที่อยู่จัดส่ง:\n${address}`,
+    });
+
+    if (error) {
+      toast.error(error.message || "จองสินค้าไม่สำเร็จ");
+    } else {
+      toast.success("จองสินค้าเรียบร้อย");
+      setOpenReserve(false);
+      loadProduct(product.id); // refresh stock
+    }
+
+    setSubmitting(false);
+  };
+
+  /* ---------- UI ---------- */
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!product) return null;
+
+  const totalPrice = quantity * product.price_per_unit;
+
+  return (
+    <div className="min-h-screen bg-muted/30">
+      <div className="container max-w-5xl mx-auto px-4 py-6">
+        <Button variant="ghost" onClick={() => navigate("/market")}>
+          <ArrowLeft className="w-4 h-4 mr-2" /> กลับ
+        </Button>
+
+        <div className="grid md:grid-cols-2 gap-8 mt-6">
+          <div className="aspect-square bg-muted rounded-xl flex items-center justify-center text-7xl">
+            🍌
+          </div>
+
+          <div className="space-y-4">
+            <Badge>{product.product_type === "fruit" ? "ผล" : "หน่อ"}</Badge>
+            <h1 className="text-3xl font-bold">{product.name}</h1>
+
+            <div className="text-4xl font-bold text-primary">
+              ฿{product.price_per_unit} / {product.unit}
+            </div>
+
+            <Separator />
+
+            <Card className="p-4 space-y-2 text-sm">
+              <div>
+                คงเหลือ: {product.available_quantity} {product.unit}
+              </div>
+              <div>
+                วันที่เก็บเกี่ยว:{" "}
+                {new Date(product.harvest_date).toLocaleDateString()}
+              </div>
+            </Card>
+
+            {product.description && (
+              <Card className="p-4">
+                <h3 className="font-semibold mb-1">รายละเอียดสินค้า</h3>
+                <p className="text-muted-foreground whitespace-pre-line">
+                  {product.description}
+                </p>
+              </Card>
+            )}
+
+            {product.farm && (
+              <Card className="p-4">
+                <div className="font-semibold">
+                  {product.farm.farm_name}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  {product.farm.farm_location}
+                </div>
+              </Card>
+            )}
+
+            <Button
+              size="lg"
+              className="w-full"
+              disabled={product.available_quantity <= 0}
+              onClick={handleOpenReserve}
+            >
+              จองสินค้า
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* ---------- Reserve Modal ---------- */}
+
+      <Dialog open={openReserve} onOpenChange={setOpenReserve}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>ยืนยันการจองสินค้า</DialogTitle>
+          </DialogHeader>
+
+          <Card className="p-4 space-y-3">
+            <div className="font-semibold">{product.name}</div>
+            <div className="text-sm text-muted-foreground">
+              ฟาร์ม: {product.farm?.farm_name}
+            </div>
+
+            <Separator />
+
+            <div className="flex justify-between text-sm">
+              <span>ราคาต่อหน่วย</span>
+              <span>
+                ฿{product.price_per_unit} / {product.unit}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Label>จำนวน</Label>
+              <Input
+                type="number"
+                min={1}
+                max={product.available_quantity}
+                value={quantity}
+                onChange={(e) => setQuantity(Number(e.target.value))}
+                className="w-24"
+              />
+            </div>
+
+            <Separator />
+
+            <div className="flex justify-between font-semibold text-lg">
+              <span>ราคารวม</span>
+              <span>฿{totalPrice.toLocaleString()}</span>
+            </div>
+          </Card>
+
+          <Card className="p-4 space-y-3">
+            <div className="font-semibold">ที่อยู่จัดส่ง</div>
+
+            <RadioGroup
+              value={addressType}
+              onValueChange={(v) =>
+                setAddressType(v as "saved" | "new")
+              }
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem
+                  value="saved"
+                  id="saved"
+                  disabled={!savedAddress}
+                />
+                <Label htmlFor="saved">ใช้ที่อยู่ที่บันทึกไว้</Label>
+              </div>
+
+              {addressType === "saved" && savedAddress && (
+                <Card className="p-3 text-sm bg-muted">
+                  {savedAddress}
+                </Card>
+              )}
+
+              <div className="flex items-center space-x-2 mt-2">
+                <RadioGroupItem value="new" id="new" />
+                <Label htmlFor="new">ใช้ที่อยู่ใหม่</Label>
+              </div>
+            </RadioGroup>
+
+            {addressType === "new" && (
+              <Textarea
+                placeholder="กรอกที่อยู่ใหม่"
+                value={newAddress}
+                onChange={(e) => setNewAddress(e.target.value)}
+              />
+            )}
+          </Card>
+
+          <Textarea
+            placeholder="หมายเหตุถึงฟาร์ม (ถ้ามี)"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
+
+          <DialogFooter>
+            <Button
+              onClick={handleReserve}
+              disabled={submitting}
+              className="w-full"
+            >
+              ยืนยันการจอง ฿{totalPrice.toLocaleString()}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default ProductDetail;

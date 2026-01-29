@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Banana Expert - Tropical Theme */
+    --background: 45 20% 98%;
+    --foreground: 25 40% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 25 40% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 25 40% 12%;
+
+    /* Banana yellow primary */
+    --primary: 45 93% 58%;
+    --primary-foreground: 25 40% 12%;
+
+    /* Fresh green secondary */
+    --secondary: 142 52% 48%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 45 20% 96%;
+    --muted-foreground: 25 20% 45%;
+
+    /* Sunset orange accent */
+    --accent: 25 95% 53%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 45 25% 88%;
+    --input: 45 25% 88%;
+    --ring: 45 93% 58%;
+
+    --radius: 0.75rem;
+
+    /* Custom tokens */
+    --gradient-primary: linear-gradient(135deg, hsl(45 93% 58%), hsl(38 90% 55%));
+    --gradient-hero: linear-gradient(180deg, hsl(45 20% 98%), hsl(45 30% 92%));
+    --shadow-soft: 0 4px 20px -2px hsl(45 93% 58% / 0.15);
+    --shadow-card: 0 2px 12px -2px hsl(25 40% 12% / 0.08);
+
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 25 40% 12%;
+    --sidebar-primary: 45 93% 58%;
+    --sidebar-primary-foreground: 25 40% 12%;
+    --sidebar-accent: 45 20% 96%;
+    --sidebar-accent-foreground: 25 40% 12%;
+    --sidebar-border: 45 25% 88%;
+    --sidebar-ring: 45 93% 58%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
