@@ -17,6 +17,8 @@ import ManageProducts from "./pages/farm/ManageProducts";
 import FarmOrders from "./pages/farm/FarmOrders";
 import OrderDetail from "./pages/farm/OrderDetail";
 import NotFound from "./pages/NotFound";
+import UserOrders from "./pages/UserOrders";
+
 
 
 const queryClient = new QueryClient();
@@ -45,6 +47,8 @@ const App = () => (
           
           <Route path="/market" element={<Market />} />
           <Route path="/market/product/:id" element={<ProductDetail />} />
+          <Route path="/dashboard/orders" element={<UserOrders />} />
+
 
 
 

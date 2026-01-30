@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { ArrowLeft } from "lucide-react";
 
 type ProductType = "fruit" | "shoot";
 
@@ -113,6 +114,15 @@ const AddProduct = () => {
      ============================== */
   return (
     <div className="container mx-auto max-w-xl py-10">
+      <Button
+    variant="ghost"
+    size="sm"
+    onClick={() => navigate(-1)}
+    className="w-fit"
+  >
+    <ArrowLeft className="w-4 h-4 mr-2" />
+    ย้อนกลับ
+  </Button>
       <Card className="p-6 space-y-6">
         <h1 className="text-xl font-bold">เพิ่มสินค้า</h1>
 

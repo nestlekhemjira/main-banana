@@ -17,12 +17,15 @@ import { toast } from "sonner";
 interface Order {
   id: string;
   status: string;
-  total_price: number;
   created_at: string;
   products: {
     name: string;
+    farm_profiles: {
+      farm_name: string;
+    } | null;
   } | null;
 }
+
 
 type Role = "user" | "farm";
 
@@ -80,22 +83,30 @@ const Dashboard = () => {
   };
 
   const fetchOrders = async (userId: string) => {
-    const { data } = await supabase
-      .from("orders")
-      .select(
-        `
-        id,
-        status,
-        total_price,
-        created_at,
-        products ( name )
-      `
+  const { data, error } = await supabase
+    .from("orders")
+    .select(`
+      id,
+      status,
+      created_at,
+      products (
+        name,
+        farm_profiles (
+          farm_name
+        )
       )
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false });
+    `)
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
 
-    setOrders(data || []);
-  };
+  if (error) {
+    toast.error(error.message);
+    return;
+  }
+
+  setOrders(data || []);
+};
+
 
   const loadProfile = async (userId: string) => {
     const { data } = await supabase
@@ -192,7 +203,7 @@ const Dashboard = () => {
             icon={<ShoppingBag />}
             title="Orders"
             subtitle={`${orders.length} orders`}
-            onClick={() => navigate("/dashboard/OrderDetail")}
+            onClick={() => navigate("/dashboard/orders")}
           />
 
           {role === "farm" ? (
@@ -234,7 +245,7 @@ const Dashboard = () => {
                       {o.products?.name || "Product"}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      ฿{o.total_price}
+                      ฟาร์ม: {o.products?.farm_profiles?.farm_name || "-"}
                     </p>
                   </div>
 
