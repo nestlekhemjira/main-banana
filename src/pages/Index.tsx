@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import {
   Upload, Sparkles, Book, Store, Utensils,
   Sprout, Droplets, BookOpen, Search, RefreshCw,
-  ArrowRight, ShieldCheck // ✅ เพิ่ม ShieldCheck เข้ามา
+  ArrowRight, ShieldCheck 
 } from "lucide-react";
 import { useNavigate, useNavigationType } from "react-router-dom";
 import { toast } from "sonner";
@@ -19,7 +19,7 @@ const Index = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [detecting, setDetecting] = useState(false);
-  const [isConsent, setIsConsent] = useState(false); // ✅ เพิ่ม State ยินยอมเก็บข้อมูล
+  const [isConsent, setIsConsent] = useState(false); 
   
   const [result, setResult] = useState<any>(null);
   const [bananaDetails, setBananaDetails] = useState<any>(null);
@@ -65,7 +65,7 @@ const Index = () => {
       setPreviewUrl(url);
       setResult(null);
       setBananaDetails(null);
-      setIsConsent(false); // ✅ Reset consent เมื่ออัปโหลดภาพใหม่
+      setIsConsent(false); 
     }
   };
 
@@ -74,7 +74,7 @@ const Index = () => {
     setPreviewUrl("");
     setResult(null);
     setBananaDetails(null);
-    setIsConsent(false); // ✅ Reset consent
+    setIsConsent(false); 
     window.scrollTo({ top: 0, behavior: "smooth" });
     toast.info("ล้างข้อมูลเรียบร้อย เริ่มสแกนใหม่ได้เลยงับ");
   };
@@ -90,7 +90,7 @@ const Index = () => {
     try {
       const formData = new FormData();
       formData.append("image", selectedImage);
-      // ✅ ส่งค่าความยินยอมไปที่ Backend ด้วย
+      
       formData.append("allow_storage", String(isConsent));
 
       const backendUrl = import.meta.env.VITE_API_BASE_URL || "/api";
@@ -100,7 +100,6 @@ const Index = () => {
         body: formData,
       });
 
-      // ✅ เช็ค HTTP status ก่อน
       if (!response.ok) {
         console.error("Backend HTTP Error:", response.status);
         toast.error("ระบบวิเคราะห์มีปัญหา กรุณาลองใหม่");
@@ -110,7 +109,7 @@ const Index = () => {
       const data = await response.json();
       console.log("AI response:", data);
 
-      // ❌ AI fail
+      // AI fail
       if (!data?.success) {
         if (data?.reason === "no_banana_detected") {
           toast.error("ไม่พบกล้วยในภาพ กรุณาลองใหม่");
@@ -124,7 +123,6 @@ const Index = () => {
         return;
       }
 
-      // ✅ ตรวจ banana_key
       if (!data?.banana_key) {
         toast.error("ไม่พบรหัสสายพันธุ์จาก AI");
         return;
@@ -195,7 +193,7 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-hero">
       <Navbar />
 
-      {/* 🟢 Hero Header Section */}
+      {/* Hero Header Section */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
           <img src={heroImage} alt="Fresh bananas background" className="w-full h-full object-cover" />
@@ -213,7 +211,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* 🟢 Main Detection Section */}
+      {/* Main Detection Section */}
       <section className="container mx-auto px-4 py-16">
         <Card className="max-w-4xl mx-auto p-8 shadow-card bg-white/90 backdrop-blur">
           <div className="text-center mb-8 flex flex-col items-center">
@@ -262,7 +260,6 @@ const Index = () => {
               </label>
             </div>
 
-            {/* ✅ ส่วน Consent: จะปรากฏเมื่อเลือกรูปแล้วแต่ยังไม่ได้วิเคราะห์ */}
             {previewUrl && !result && (
               <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="flex items-start gap-3">
@@ -379,7 +376,7 @@ const Index = () => {
         </Card>
       </section>
 
-      {/* 🟢 Features Section Overview */}
+      {/* Features Section Overview */}
       <section className="container mx-auto px-4 py-16">
         <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
           <Card className="p-6 text-center hover:shadow-soft transition-shadow">
@@ -410,7 +407,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* 🟢 CTA Section - High Gloss Design */}
+      {/* CTA Section - High Gloss Design */}
       <section className="container mx-auto px-4 py-24">
         <div className="relative group max-w-6xl mx-auto">
           <div className="absolute -inset-1 bg-gradient-to-r from-yellow-400 to-emerald-400 rounded-[3rem] blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
@@ -471,7 +468,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* 🟢 Footer Section */}
+      {/* Footer Section */}
       <footer className="border-t border-border bg-background/80 backdrop-blur-sm mt-16">
         <div className="container mx-auto px-4 py-8 text-center text-muted-foreground">
           <p>© 2026 Banana Expert. Connecting Thailand's finest banana farms.</p>
